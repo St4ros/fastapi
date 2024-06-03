@@ -47,8 +47,7 @@ function Registrar(fila) {
                 console.error('Error al asignar el registro', response);
                 alert('Error al asignar el turno');
             }
-            filas=fila;
-            turnofila(filas);
+            turnofila(fila);
 
         } catch (error) {
             console.error('Error al realizar la solicitud:', error);
