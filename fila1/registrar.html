@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asignar Turno</title>
+  <!-- Enlace a Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <div class="row justify-content-center align-items-center" style="height: 100vh;">
+      <div class="col-4">
+        <h2 class="text-center">Asignar Turno</h2>
+        <form id="turnoForm">
+          <div class="form-group">
+            <label for="inputID">ID</label>
+            <input type="text" class="form-control" id="inputID" name="id" placeholder="Ingresa tu ID" required>
+          </div>
+          <div class="form-group">
+            <label for="inputName">Nombre</label>
+            <input type="text" class="form-control" id="inputName" name="name" placeholder="Nombre" required>
+          </div>
+          <div class="form-group">
+            <label for="inputFecha">Fecha</label>
+            <input type="date" class="form-control" id="inputFecha" name="fecha" placeholder="fecha" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Asignar turno</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Enlace a Bootstrap JS y dependencias -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="../scripts.js"></script>
+  <script>
+    
+    document.getElementById('inputID').addEventListener('change', function () {
+      fila="a";
+      verificarID(fila);
+    });
+
+    document.getElementById('turnoForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      fila="a";
+      Registrar();
+    });
+  </script>
+</body>
+
+</html>
