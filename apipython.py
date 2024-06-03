@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
 
-from bson.json_util import dumps
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -131,11 +131,11 @@ async def eliminar_turno(turno: int, fila: str):
 async def get_ultimas_cinco_filas(fila: str): 
     # Obtener las últimas 5 filas de la colección especificada
     if fila == "a":
-        ultimas_cinco_filas_cursor = fila1.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", -1).limit(5)
+        ultimas_cinco_filas_cursor = fila1.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
     elif fila == "b":
-        ultimas_cinco_filas_cursor = fila2.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", -1).limit(5)
+        ultimas_cinco_filas_cursor = fila2.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
     elif fila == "c":
-        ultimas_cinco_filas_cursor = fila3.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", -1).limit(5)
+        ultimas_cinco_filas_cursor = fila3.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
     else:
         raise HTTPException(status_code=400, detail="Fila no válida")
     
@@ -143,4 +143,4 @@ async def get_ultimas_cinco_filas(fila: str):
     ultimas_cinco_filas_list = await ultimas_cinco_filas_cursor.to_list(length=5)
     
     # Devolver los datos en formato JSON
-    return dumps(ultimas_cinco_filas_list)
+    return JSONResponse(content=ultimas_cinco_filas_list)

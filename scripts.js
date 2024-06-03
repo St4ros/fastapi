@@ -141,11 +141,19 @@ async function Eliminarf(turno,fila) {
 async function Ultimos5f(fila) {
     // Hacer una solicitud GET a la API
     const response = await fetch(`http://localhost:8000/ultimascincofilas/${fila}`);
-    const data = await response.text(); // Cambiado a text() ya que la API ahora devuelve una tabla HTML
+    const data = await response.json(); // Ahora se espera un JSON directamente
 
     // Obtener el elemento HTML donde se mostrará la tabla
     const tabla = document.getElementById('current-turno');
 
+    // Crear una tabla HTML
+    let html = '<table border="1"><tr><th>Nombre</th><th>Turno</th></tr>';
+    // Iterar sobre los datos y agregar filas a la tabla
+    data.forEach(item => {
+        html += `<tr><td>${item.name}</td><td>${item.turno}</td></tr>`;
+    });
+    html += '</table>';
+
     // Poner la tabla HTML en el elemento
-    tabla.innerHTML = data;
+    tabla.innerHTML = html;
 }
