@@ -37,13 +37,13 @@ const submitForm = async () => {
     <p class="text-lg text-center mt-1">Si usted ya se ha registrado antes, ingrese su id y presione enter para
         autocompletar sus datos
     </p>
-    <form @submit.prevent="submitForm" class="bg-gray-300 shadow-md rounded sm: text-center">
+    <form @submit.prevent="submitForm" class="bg-gray-300 shadow-md rounded sm:640px text-center">
         <div class="m-3">
             <label class="block mt-2 text-sm font-medium" for="fila">Seleccione fila segun trámite:</label>
             <br />
-            <input type="radio" name="fila" v-model="form.fila" value="a" /> Pagos
-            <input type="radio" name="fila" v-model="form.fila" value="b" /> PQRS
-            <input type="radio" name="fila" v-model="form.fila" value="c" /> Preferencial
+            <input type="radio" name="fila" v-model="form.fila" value="pagos" /> Pagos
+            <input type="radio" name="fila" v-model="form.fila" value="pqrs" /> PQRS
+            <input type="radio" name="fila" v-model="form.fila" value="preferencial" /> Preferencial
         </div>
         <div class="m-3">
             <div class="mb-5"><label class="block mb-2 text-sm font-medium" for="id">Identificacion</label>
