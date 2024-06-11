@@ -15,6 +15,12 @@ fila1 = database.fila1
 fila2 = database.fila2
 fila3 = database.fila3
 
+# Configuración de CORS
+origins = [
+    "http://localhost:8000",
+    "http://localhost",
+]
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -31,31 +37,27 @@ class Turno(BaseModel):
     fecha: str
     fila: str
     estado: Optional[bool] = False
-    turno: int
+    turno: Optional[int] = None  # Hacer turno opcional
 
-class FilaTurno(BaseModel):
-    name: str
+class Inscritos(BaseModel):
     id: str
-    fila: str
-    estado: bool
+    name: str
+    fecha: str
 
-# Helper function to get the next turno number
-async def get_next_turno(fila_collection):
-    max_turno = await fila_collection.find_one(sort=[("turno", -1)])
-    return max_turno["turno"] + 1 if max_turno else 1
-
-@app.post("/registrar/")
-async def assign_turn(turno: Turno):
-    turno.turno = await getTurno(turno)  # Asignar el número de turno
-    turno_data = turno.dict()
-    result = await inscritos.insert_one(turno_data)
+@app.post("/registrar/", response_model=Inscritos)
+async def register_inscrito(inscrito: Inscritos):
+    inscrito_data = inscrito.dict()
+    result = await inscritos.insert_one(inscrito_data)
     
     if result.inserted_id:
-        return {"message": "Turno asignado correctamente"}
-    raise HTTPException(status_code=400, detail="Error al asignar el turno")
+        return inscrito_data  # Retornar los datos del inscrito como JSON
+    raise HTTPException(status_code=400, detail="Error al registrar el inscrito")
 
 
 ############################################333nueva funciones
+
+
+
 #se ovtirne el un el turno mas alto de la fila y se le suma uno y retorna el numero
 #se le pasa un string fial(a,b,c)
 #retorna un numero
@@ -82,8 +84,8 @@ async def getTurno(fila: str):
 #se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
 #se le pasa un string fial(a,b,c)
 #no retorna nada
-@app.patch("/actualizar_estado_atendido/")
-async def actualizar_estado_atendido(fila: str):
+@app.patch("/actualizar_estado/")
+async def actualizar_estado(fila: str):
     # Determinar la colección según la fila recibida
     fila_collection = None
     if fila == "a":
@@ -160,7 +162,7 @@ async def actualizar_estado_atendido(fila: str):
 
 
 
-
+"""
 @app.post("/setfila/")
 async def assign_turn_to_fila(fila_turno: FilaTurno):
     if fila_turno.fila == "a":
@@ -179,7 +181,7 @@ async def assign_turn_to_fila(fila_turno: FilaTurno):
 
     if result.inserted_id:
         return {"message": "Turno asignado correctamente"}
-    raise HTTPException(status_code=400, detail="Error al asignar el turno")
+    raise HTTPException(status_code=400, detail="Error al asignar el turno")"""
 
 @app.get("/getturnofila/{fila}")
 async def get_current_turn(fila: str):
