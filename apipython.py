@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from typing import List
 
 app = FastAPI()
 
@@ -44,6 +45,12 @@ class Inscritos(BaseModel):
     name: str
     fecha: str
 
+
+
+
+#se ovtirne los datos para inscrivirlo y se lo inscrive
+#se le pasa id-name-fecha
+#retorna json con los datos de la inscripcion
 @app.post("/registrar/", response_model=Inscritos)
 async def register_inscrito(inscrito: Inscritos):
     inscrito_data = inscrito.dict()
@@ -81,34 +88,98 @@ async def getTurno(fila: str):
     else:
         return 1
     
-#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
-#se le pasa un string fial(a,b,c)
-#no retorna nada
-@app.patch("/actualizar_estado/")
-async def actualizar_estado(fila: str):
-    # Determinar la colección según la fila recibida
+
+
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+@app.post("/asignar_turno/", response_model=Turno)
+async def asignar_turno(turno: Turno):
+    turno_data = turno.dict()
+    nuevo_turno = await getTurno(turno_data["fila"])
+    turno_data["turno"] = nuevo_turno
     fila_collection = None
-    if fila == "a":
+
+    if turno_data["fila"] == "a":
         fila_collection = fila1
-    elif fila == "b":
+    elif turno_data["fila"] == "b":
         fila_collection = fila2
-    elif fila == "c":
+    elif turno_data["fila"] == "c":
         fila_collection = fila3
     else:
         raise HTTPException(status_code=400, detail="Fila inválida")
 
-    # Buscar el turno con el número más bajo y estado false
-    turno_a_actualizar = await fila_collection.find_one_and_update(
-        {"estado": False},
-        {"$set": {"estado": True}},
-        sort=[("turno", 1)],
-        return_document=True
-    )
+    result = await fila_collection.insert_one(turno_data)
     
-    if turno_a_actualizar:
-        return {"message": "Estado del turno actualizado correctamente"}
+    if result.inserted_id:
+        return turno_data
+    raise HTTPException(status_code=400, detail="Error al asignar el turno")
+
+
+
+#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
+#se le pasa un string fial(a,b,c)
+#no retorna nada
+class UpdateTurnoRequest(BaseModel):
+    fila: str
+    
+@app.patch("/actualizar_turno/", response_model=Turno)
+async def actualizar_turno(request: UpdateTurnoRequest):
+    fila_collection = None
+    if request.fila == "a":
+        fila_collection = fila1
+    elif request.fila == "b":
+        fila_collection = fila2
+    elif request.fila == "c":
+        fila_collection = fila3
     else:
-        raise HTTPException(status_code=404, detail="No se encontró un turno pendiente en la fila especificada")
+        raise HTTPException(status_code=400, detail="Fila inválida")
+
+    # Encontrar el turno más pequeño con estado false
+    turno_document = await fila_collection.find_one(
+        {"estado": False}, 
+        sort=[("turno", 1)]
+    )
+
+    if turno_document:
+        # Actualizar el estado a true
+        update_result = await fila_collection.update_one(
+            {"_id": turno_document["_id"]},
+            {"$set": {"estado": True}}
+        )
+
+        if update_result.modified_count == 1:
+            return {**turno_document, "estado": True}
+    
+    raise HTTPException(status_code=400, detail="No se encontró un turno para actualizar")
+
+
+#se ovtirne los 5 primeros turnos
+#se le pasa fial(a,b,c)
+#retorna json con los 5 primeros turnos de la fila correspondiente
+class FilaRequest(BaseModel):
+    fila: str
+
+@app.get("/obtener_turnos/", response_model=List[Turno])
+async def obtener_turnos(request: FilaRequest):
+    fila_collection = None
+    if request.fila == "a":
+        fila_collection = fila1
+    elif request.fila == "b":
+        fila_collection = fila2
+    elif request.fila == "c":
+        fila_collection = fila3
+    else:
+        raise HTTPException(status_code=400, detail="Fila inválida")
+
+    # Obtener los 5 turnos más pequeños con estado false
+    turnos = await fila_collection.find(
+        {"estado": False},
+        sort=[("turno", 1)]
+    ).limit(5).to_list(5)
+
+    return turnos
+
 
 ##############################################################
 
