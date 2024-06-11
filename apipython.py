@@ -46,7 +46,7 @@ async def get_next_turno(fila_collection):
 
 @app.post("/registrar/")
 async def assign_turn(turno: Turno):
-    turno.turno = await get_next_turno_number(turno.fila)  # Asignar el número de turno
+    turno.turno = await getTurno(turno)  # Asignar el número de turno
     turno_data = turno.dict()
     result = await inscritos.insert_one(turno_data)
     
