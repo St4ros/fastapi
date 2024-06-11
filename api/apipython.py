@@ -49,7 +49,7 @@ class Inscritos(BaseModel):
 """
 ##/registrar/
 #se obtinen los datos del formulario y si no esta se lo inscrive y se le asigna un turno si ya esta inscrito se le asigna un turno
-    si ya tiene un turno en alguna de las final no lo deja cojer turno.
+    si ya tiene un turno en alguna de las filas no lo deja cojer turno.
 #se le pasa id-name-fecha
 #retorna json con los datos de la inscripcion
 ## ej json:
