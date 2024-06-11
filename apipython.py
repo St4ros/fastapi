@@ -3,7 +3,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
-
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
