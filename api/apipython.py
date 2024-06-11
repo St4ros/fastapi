@@ -48,7 +48,8 @@ class Inscritos(BaseModel):
 ####################################################################documentacion
 """
 ##/registrar/
-#se ovtirne los datos para inscrivirlo y se lo inscrive
+#se obtinen los datos del formulario y si no esta se lo inscrive y se le asigna un turno si ya esta inscrito se le asigna un turno
+    si ya tiene un turno en alguna de las final no lo deja cojer turno.
 #se le pasa id-name-fecha
 #retorna json con los datos de la inscripcion
 ## ej json:
@@ -61,7 +62,8 @@ class Inscritos(BaseModel):
 """
 """
 ##/asignar_turno/
-#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente este no hace ningun tipo de comprovacion 
+    por lo cual puede inscrivir cualquier id
 #se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
 #retorna json con los datos del turno
 ## ej json:
