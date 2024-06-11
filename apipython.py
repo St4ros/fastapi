@@ -236,7 +236,7 @@ class VerificarInscripcionResponse(BaseModel):
 @app.post("/verificar_inscripcion/", response_model=VerificarInscripcionResponse)
 async def verificar_inscripcion(request: VerificarInscripcionRequest):
     # Verificar si el ID ya existe en la colección inscritos
-    inscrito_document = await inscritos_collection.find_one({"_id": request.id})
+    inscrito_document = await inscritos.find_one({"id": request.id})
 
     if inscrito_document:
         return {"inscrito": True}
