@@ -45,12 +45,31 @@ class Inscritos(BaseModel):
     name: str
     fecha: str
 
-
-
-
+##consulta
 #se ovtirne los datos para inscrivirlo y se lo inscrive
 #se le pasa id-name-fecha
 #retorna json con los datos de la inscripcion
+@app.post("/registrar/", response_model=Turno)
+async def register_inscrito(inscrito: Turno):
+    inscrito_data = inscrito.dict()
+
+    if await verificar_inscripcion(inscrito_data["id"]):
+        await asignar_turno(inscrito)
+        return inscrito_data
+    else:
+        inscrito_document = {
+            "id": inscrito_data["id"],
+            "name": inscrito_data["name"],
+            "fecha": inscrito_data["fecha"]
+        }
+        result = await inscritos.insert_one(inscrito_document)
+        await asignar_turno(inscrito)
+        
+        if result.inserted_id:
+            return inscrito_data  # Retornar los datos del inscrito como JSON
+        raise HTTPException(status_code=400, detail="Error al registrar el inscrito")
+
+"""
 @app.post("/registrar/", response_model=Inscritos)
 async def register_inscrito(inscrito: Inscritos):
     inscrito_data = inscrito.dict()
@@ -59,10 +78,7 @@ async def register_inscrito(inscrito: Inscritos):
     if result.inserted_id:
         return inscrito_data  # Retornar los datos del inscrito como JSON
     raise HTTPException(status_code=400, detail="Error al registrar el inscrito")
-
-
-############################################333nueva funciones
-
+"""
 
 ##funcion
 #se ovtirne el un el turno mas alto de la fila y se le suma uno y retorna el numero
@@ -89,7 +105,7 @@ async def getTurno(fila: str):
         return 1
     
 
-
+##consulta
 #se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
 #se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
 #retorna json con los datos del turno
@@ -116,7 +132,7 @@ async def asignar_turno(turno: Turno):
     raise HTTPException(status_code=400, detail="Error al asignar el turno")
 
 
-
+##consulta
 #se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
 #se le pasa un string fial(a,b,c)
 #no retorna nada
@@ -154,6 +170,7 @@ async def actualizar_turno(request: UpdateTurnoRequest):
     raise HTTPException(status_code=400, detail="No se encontró un turno para actualizar")
 
 
+##consulta
 #se obtienen los 5 primeros turnos
 #se le pasa fial(a,b,c)
 #retorna json con los 5 primeros turnos de la fila correspondiente
@@ -191,7 +208,7 @@ async def cobtener_turnos(request: ConsultaTurnosRequest):
     
     raise HTTPException(status_code=404, detail="No se encontraron turnos con el estado false")
 
-
+##consulta
 #se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
 #se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
 #retorna json con los datos del turno
@@ -227,6 +244,15 @@ async def consulta_turno(request: ConsultaTurnoRequest):
 #se obtiene un id y se verifica si existe o no
 #se le pasa id
 #retorna un true o false
+async def verificar_inscripcion(id: str):
+    inscrito_document = await inscritos.find_one({"id": id})
+
+    if inscrito_document:
+        return {"inscrito": True}
+    else:
+        return {"inscrito": False}
+
+"""
 class VerificarInscripcionRequest(BaseModel):
     id: str
 
@@ -242,5 +268,4 @@ async def verificar_inscripcion(request: VerificarInscripcionRequest):
         return {"inscrito": True}
     else:
         return {"inscrito": False}
-
-##############################################################
+"""
