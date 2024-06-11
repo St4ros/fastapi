@@ -45,7 +45,76 @@ class Inscritos(BaseModel):
     name: str
     fecha: str
 
+####################################################################documentacion
+"""
+##/registrar/
+#se ovtirne los datos para inscrivirlo y se lo inscrive
+#se le pasa id-name-fecha
+#retorna json con los datos de la inscripcion
+## ej json:
+{
+    "id": "102394",
+    "name": "Alan Juanito",
+    "fecha": "2023-08-10",
+    "fila": "c"
+}
+"""
+"""
+##/asignar_turno/
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+## ej json:
+{
+    "id": "12345",
+    "name": "Juan Perez",
+    "fecha": "2024-06-10",
+    "fila": "a",
+    "estado": false
+}
+"""
 
+"""
+##/actualizar_turno/
+#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
+#se le pasa un string fial(a,b,c)
+#retorna los datos del id cancelado
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/obtener_turnos/
+#se obtienen los 5 primeros turnos
+#se le pasa fial(a,b,c)
+#retorna json con los 5 primeros turnos de la fila correspondiente
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/consulta_turno/
+#se obtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/cancelar_turno/
+#se obtine el id y se lo cancela
+#se le pasa un string id
+#retorna los datos del id cancelado
+## ej json:
+{
+    "id": "102394"
+}
+"""
+#############################################################################
 ####################################################################Funciones
 
 ##funcion
@@ -231,7 +300,6 @@ async def actualizar_turno(request: UpdateTurnoRequest):
 #se obtienen los 5 primeros turnos
 #se le pasa fial(a,b,c)
 #retorna json con los 5 primeros turnos de la fila correspondiente
-#########################################################################################################
 class Unturno(BaseModel):
     id: str
     name: str
