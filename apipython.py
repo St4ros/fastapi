@@ -64,7 +64,7 @@ async def register_inscrito(inscrito: Inscritos):
 ############################################333nueva funciones
 
 
-
+##funcion
 #se ovtirne el un el turno mas alto de la fila y se le suma uno y retorna el numero
 #se le pasa un string fial(a,b,c)
 #retorna un numero
@@ -154,18 +154,18 @@ async def actualizar_turno(request: UpdateTurnoRequest):
     raise HTTPException(status_code=400, detail="No se encontró un turno para actualizar")
 
 
-#se ovtirne los 5 primeros turnos
+#se obtienen los 5 primeros turnos
 #se le pasa fial(a,b,c)
 #retorna json con los 5 primeros turnos de la fila correspondiente
-
-class Turno(BaseModel):
+#########################################################################################################
+class Unturno(BaseModel):
     turno: int
     estado: bool
 
 class ConsultaTurnosRequest(BaseModel):
     fila: str
 
-@app.get("/obtener_turnos/", response_model=List[Turno])
+@app.get("/obtener_turnos/", response_model=List[Unturno])
 async def cobtener_turnos(request: ConsultaTurnosRequest):
     fila_collection = None
     if request.fila == "a":
@@ -192,136 +192,55 @@ async def cobtener_turnos(request: ConsultaTurnosRequest):
     raise HTTPException(status_code=404, detail="No se encontraron turnos con el estado false")
 
 
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+class ConsultaTurnoRequest(BaseModel):
+    fila: str
+
+@app.get("/consulta_turno/", response_model=Turno)
+async def consulta_turno(request: ConsultaTurnoRequest):
+    fila_collection = None
+    if request.fila == "a":
+        fila_collection = fila1
+    elif request.fila == "b":
+        fila_collection = fila2
+    elif request.fila == "c":
+        fila_collection = fila3
+    else:
+        raise HTTPException(status_code=400, detail="Fila inválida")
+
+    # Encontrar el turno más pequeño con estado false
+    turno_document = await fila_collection.find_one(
+        {"estado": False}, 
+        sort=[("turno", 1)]
+    )
+
+    if turno_document:
+        return turno_document
+    
+    raise HTTPException(status_code=404, detail="No se encontró un turno con el estado false")
+
+
+
+##funcion
+#se obtiene un id y se verifica si existe o no
+#se le pasa id
+#retorna un true o false
+class VerificarInscripcionRequest(BaseModel):
+    id: str
+
+class VerificarInscripcionResponse(BaseModel):
+    inscrito: bool
+
+@app.post("/verificar_inscripcion/", response_model=VerificarInscripcionResponse)
+async def verificar_inscripcion(request: VerificarInscripcionRequest):
+    # Verificar si el ID ya existe en la colección inscritos
+    inscrito_document = await inscritos_collection.find_one({"_id": request.id})
+
+    if inscrito_document:
+        return {"inscrito": True}
+    else:
+        return {"inscrito": False}
 
 ##############################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-@app.post("/setfila/")
-async def assign_turn_to_fila(fila_turno: FilaTurno):
-    if fila_turno.fila == "a":
-        fila_collection = fila1
-    elif fila_turno.fila == "b":
-        fila_collection = fila2
-    elif fila_turno.fila == "c":
-        fila_collection = fila3
-    else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
-
-    next_turno = await get_next_turno(fila_collection)
-    turno_data = fila_turno.dict()
-    turno_data["turno"] = next_turno
-    result = await fila_collection.insert_one(turno_data)
-
-    if result.inserted_id:
-        return {"message": "Turno asignado correctamente"}
-    raise HTTPException(status_code=400, detail="Error al asignar el turno")"""
-
-@app.get("/getturnofila/{fila}")
-async def get_current_turn(fila: str):
-    if fila == "a":
-        fila_collection = fila1
-    elif fila == "b":
-        fila_collection = fila2
-    elif fila == "c":
-        fila_collection = fila3
-    else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
-
-    max_turno = await fila_collection.find_one(sort=[("turno", 1)])
-    if max_turno:
-        return {"turno": max_turno["turno"]}
-    raise HTTPException(status_code=404, detail="No se encontró ningún turno registrado")
-
-@app.get("/verificar/{id}")
-async def verificar_id(id: str):
-    user = await inscritos.find_one({"id": id})
-    if user:
-        return {"name": user["name"], "fecha": user["fecha"], "estado": user["estado"]}
-    raise HTTPException(status_code=404, detail="ID no encontrado")
-
-@app.get("/nombref/{id}/{fila}")
-async def verificar_name(id: str, fila: str):
-    if fila == "a":
-        user = await fila1.find_one({"id": id})
-    elif fila == "b":
-        user = await fila2.find_one({"id": id})
-    elif fila == "c":
-        user = await fila3.find_one({"id": id})
-    else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
-
-    if user:
-        return {"turno": user["turno"], "name": user["name"]}
-    raise HTTPException(status_code=404, detail="Usuario no encontrado en la fila")
-
-@app.delete("/eliminarf/{turno}/{fila}")
-async def eliminar_turno(turno: int, fila: str):
-    if fila == "a":
-        result = await fila1.delete_one({"turno": turno})
-    elif fila == "b":   
-        result = await fila2.delete_one({"turno": turno})
-    elif fila == "c":
-        result = await fila3.delete_one({"turno": turno})
-    else:
-        raise HTTPException(status_code=400, detail="Fila no válida")
-
-    if result.deleted_count == 1:
-        return {"message": "Turno eliminado correctamente"}
-    raise HTTPException(status_code=404, detail="Turno no encontrado en la fila")
-
-inscritos_collection = database["inscritos"]  # Replace with your actual collection name
-
-@app.get("/inscritos/")
-async def get_all_inscritos():
-    documents = inscritos_collection.find()
-    return documents
