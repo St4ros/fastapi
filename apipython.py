@@ -53,8 +53,11 @@ class Inscritos(BaseModel):
 async def register_inscrito(inscrito: Turno):
     inscrito_data = inscrito.dict()
     if await verificar_inscripcion(inscrito.id):
-        await asignar_turno(inscrito)
-        return inscrito_data
+        if await verificar_id_filas(inscrito.id):
+            raise HTTPException(status_code=400, detail="El id ya se encuentra en una fila")
+        else:
+            await asignar_turno(inscrito)
+            return inscrito_data
     else:
         inscrito_document = {
             "id": inscrito_data["id"],
@@ -267,3 +270,29 @@ async def verificar_inscripcion(request: VerificarInscripcionRequest):
     else:
         return {"inscrito": False}
 """
+
+##funcion
+#se obtiene un id y se verifica si existe o no en todas las filas
+#se le pasa id
+#retorna un true o false
+async def verificar_id_filas(id):
+    inscrito_fila = await fila1.find_one(
+        {"id": id, "estado": False}
+    )
+    if inscrito_fila:
+        return True #si esta registrado
+    else:
+        inscrito_fila = await fila1.find_one(
+            {"id": id, "estado": False}
+        )
+        if inscrito_fila:
+            return True #si esta registrado
+        else:
+            inscrito_fila = await fila1.find_one(
+                {"id": id, "estado": False}
+            )
+            if inscrito_fila:
+                return True #si esta registrado
+            else:
+                return False #no esta registrado
+    
