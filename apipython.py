@@ -52,8 +52,7 @@ class Inscritos(BaseModel):
 @app.post("/registrar/", response_model=Turno)
 async def register_inscrito(inscrito: Turno):
     inscrito_data = inscrito.dict()
-
-    if await verificar_inscripcion(inscrito_data["id"]):
+    if await verificar_inscripcion(inscrito.id):
         await asignar_turno(inscrito)
         return inscrito_data
     else:
@@ -244,13 +243,12 @@ async def consulta_turno(request: ConsultaTurnoRequest):
 #se obtiene un id y se verifica si existe o no
 #se le pasa id
 #retorna un true o false
-async def verificar_inscripcion(id: str):
+async def verificar_inscripcion(id):
     inscrito_document = await inscritos.find_one({"id": id})
-
     if inscrito_document:
-        return {"inscrito": True}
+        return True
     else:
-        return {"inscrito": False}
+        return False
 
 """
 class VerificarInscripcionRequest(BaseModel):
