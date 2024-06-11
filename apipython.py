@@ -137,7 +137,7 @@ async def asignar_turno(turno: Turno):
 ##consulta
 #se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
 #se le pasa un string fial(a,b,c)
-#no retorna nada
+#retorna los datos del id cancelado
 class UpdateTurnoRequest(BaseModel):
     fila: str
     
@@ -211,7 +211,7 @@ async def cobtener_turnos(request: ConsultaTurnosRequest):
     raise HTTPException(status_code=404, detail="No se encontraron turnos con el estado false")
 
 ##consulta
-#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se obtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
 #se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
 #retorna json con los datos del turno
 class ConsultaTurnoRequest(BaseModel):
@@ -296,3 +296,31 @@ async def verificar_id_filas(id):
             else:
                 return False #no esta registrado
     
+
+
+##consulta
+#se obtine el id y se lo cancela
+#se le pasa un string id
+#retorna los datos del id cancelado
+class CancelarTurno(BaseModel):
+    id: str
+    
+@app.patch("/cancelar_turno/", response_model=Turno)
+async def cancelar_turno(request: CancelarTurno):
+    colecciones = [fila1, fila2, fila3]
+
+    for fila_collection in colecciones:
+        # Encontrar el ID que está en la fila con estado False
+        canselar_fila = await fila_collection.find_one(
+            {"id": request.id, "estado": False}
+        )
+        if canselar_fila:
+            # Actualizar el estado a True
+            update_result = await fila_collection.update_one(
+                {"_id": canselar_fila["_id"]},
+                {"$set": {"estado": True}}
+            )
+            if update_result.modified_count == 1:
+                return {**canselar_fila, "estado": True}
+    
+    raise HTTPException(status_code=400, detail="No se encontró un turno para cancelar")
