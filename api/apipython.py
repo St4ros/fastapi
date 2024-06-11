@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from typing import List
 
 app = FastAPI()
 
@@ -14,6 +15,12 @@ inscritos = database.inscritos
 fila1 = database.fila1
 fila2 = database.fila2
 fila3 = database.fila3
+
+# Configuración de CORS
+origins = [
+    "http://localhost:8000",
+    "http://localhost",
+]
 
 # CORS configuration
 app.add_middleware(
@@ -31,31 +38,112 @@ class Turno(BaseModel):
     fecha: str
     fila: str
     estado: Optional[bool] = False
-    turno: int
+    turno: Optional[int] = None  # Hacer turno opcional
 
-class FilaTurno(BaseModel):
-    name: str
+class Inscritos(BaseModel):
     id: str
-    fila: str
-    estado: bool
+    name: str
+    fecha: str
 
-# Helper function to get the next turno number
-async def get_next_turno(fila_collection):
-    max_turno = await fila_collection.find_one(sort=[("turno", -1)])
-    return max_turno["turno"] + 1 if max_turno else 1
+####################################################################documentacion
+"""
+##/registrar/
+#se ovtirne los datos para inscrivirlo y se lo inscrive
+#se le pasa id-name-fecha
+#retorna json con los datos de la inscripcion
+## ej json:
+{
+    "id": "102394",
+    "name": "Alan Juanito",
+    "fecha": "2023-08-10",
+    "fila": "c"
+}
+"""
+"""
+##/asignar_turno/
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+## ej json:
+{
+    "id": "12345",
+    "name": "Juan Perez",
+    "fecha": "2024-06-10",
+    "fila": "a",
+    "estado": false
+}
+"""
 
-@app.post("/registrar/")
-async def assign_turn(turno: Turno):
-    turno.turno = await get_next_turno_number(turno.fila)  # Asignar el número de turno
-    turno_data = turno.dict()
-    result = await inscritos.insert_one(turno_data)
-    
-    if result.inserted_id:
-        return {"message": "Turno asignado correctamente"}
-    raise HTTPException(status_code=400, detail="Error al asignar el turno")
+"""
+##/actualizar_turno/
+#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
+#se le pasa un string fial(a,b,c)
+#retorna los datos del id cancelado
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/obtener_turnos/
+#se obtienen los 5 primeros turnos
+#se le pasa fial(a,b,c)
+#retorna json con los 5 primeros turnos de la fila correspondiente
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/consulta_turno/
+#se obtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+## ej json:
+{
+    "fila": "a"
+}
+"""
+"""
+##/cancelar_turno/
+#se obtine el id y se lo cancela
+#se le pasa un string id
+#retorna los datos del id cancelado
+## ej json:
+{
+    "id": "102394"
+}
+"""
+#############################################################################
+####################################################################Funciones
+
+##funcion
+#se obtiene un id y se verifica si existe o no en todas las filas
+#se le pasa id
+#retorna un true o false
+async def verificar_id_filas(id):
+    inscrito_fila = await fila1.find_one(
+        {"id": id, "estado": False}
+    )
+    if inscrito_fila:
+        return True #si esta registrado
+    else:
+        inscrito_fila = await fila1.find_one(
+            {"id": id, "estado": False}
+        )
+        if inscrito_fila:
+            return True #si esta registrado
+        else:
+            inscrito_fila = await fila1.find_one(
+                {"id": id, "estado": False}
+            )
+            if inscrito_fila:
+                return True #si esta registrado
+            else:
+                return False #no esta registrado
 
 
-############################################333nueva funciones
+##funcion
 #se ovtirne el un el turno mas alto de la fila y se le suma uno y retorna el numero
 #se le pasa un string fial(a,b,c)
 #retorna un numero
@@ -78,165 +166,251 @@ async def getTurno(fila: str):
         return max_turno["turno"] + 1
     else:
         return 1
+
+
+##funcion
+#se obtiene un id y se verifica si existe o no
+#se le pasa id
+#retorna un true o false
+async def verificar_inscripcion(id):
+    inscrito_document = await inscritos.find_one({"id": id})
+    if inscrito_document:
+        return True
+    else:
+        return False    
+
+############################################################################
+####################################################################Consultas
+##consulta
+#se ovtirne los datos para inscrivirlo y se lo inscrive
+#se le pasa id-name-fecha
+#retorna json con los datos de la inscripcion
+@app.post("/registrar/", response_model=Turno)
+async def register_inscrito(inscrito: Turno):
+    inscrito_data = inscrito.dict()
+    if await verificar_inscripcion(inscrito.id):
+        if await verificar_id_filas(inscrito.id):
+            raise HTTPException(status_code=400, detail="El id ya se encuentra en una fila")
+        else:
+            await asignar_turno(inscrito)
+            return inscrito_data
+    else:
+        inscrito_document = {
+            "id": inscrito_data["id"],
+            "name": inscrito_data["name"],
+            "fecha": inscrito_data["fecha"]
+        }
+        result = await inscritos.insert_one(inscrito_document)
+        await asignar_turno(inscrito)
+        
+        if result.inserted_id:
+            return inscrito_data  # Retornar los datos del inscrito como JSON
+        raise HTTPException(status_code=400, detail="Error al registrar el inscrito")
+## ej json:
+"""
+{
+    "id": "102394",
+    "name": "Alan Juanito",
+    "fecha": "2023-08-10",
+    "fila": "c"
+}
+"""
     
-#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
-#se le pasa un string fial(a,b,c)
-#no retorna nada
-@app.patch("/actualizar_estado_atendido/")
-async def actualizar_estado_atendido(fila: str):
-    # Determinar la colección según la fila recibida
+
+##consulta
+#se ovtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+@app.post("/asignar_turno/", response_model=Turno)
+async def asignar_turno(turno: Turno):
+    turno_data = turno.dict()
+    nuevo_turno = await getTurno(turno_data["fila"])
+    turno_data["turno"] = nuevo_turno
     fila_collection = None
-    if fila == "a":
+
+    if turno_data["fila"] == "a":
         fila_collection = fila1
-    elif fila == "b":
+    elif turno_data["fila"] == "b":
         fila_collection = fila2
-    elif fila == "c":
+    elif turno_data["fila"] == "c":
         fila_collection = fila3
     else:
         raise HTTPException(status_code=400, detail="Fila inválida")
 
-    # Buscar el turno con el número más bajo y estado false
-    turno_a_actualizar = await fila_collection.find_one_and_update(
-        {"estado": False},
-        {"$set": {"estado": True}},
-        sort=[("turno", 1)],
-        return_document=True
-    )
-    
-    if turno_a_actualizar:
-        return {"message": "Estado del turno actualizado correctamente"}
-    else:
-        raise HTTPException(status_code=404, detail="No se encontró un turno pendiente en la fila especificada")
-
-##############################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.post("/setfila/")
-async def assign_turn_to_fila(fila_turno: FilaTurno):
-    if fila_turno.fila == "a":
-        fila_collection = fila1
-    elif fila_turno.fila == "b":
-        fila_collection = fila2
-    elif fila_turno.fila == "c":
-        fila_collection = fila3
-    else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
-
-    next_turno = await get_next_turno(fila_collection)
-    turno_data = fila_turno.dict()
-    turno_data["turno"] = next_turno
     result = await fila_collection.insert_one(turno_data)
-
+    
     if result.inserted_id:
-        return {"message": "Turno asignado correctamente"}
+        return turno_data
     raise HTTPException(status_code=400, detail="Error al asignar el turno")
+## ej json:
+"""
+{
+    "id": "12345",
+    "name": "Juan Perez",
+    "fecha": "2024-06-10",
+    "fila": "a",
+    "estado": false
+}
+"""
 
-@app.get("/getturnofila/{fila}")
-async def get_current_turn(fila: str):
-    if fila == "a":
+##consulta
+#se ovtine la fila y el turno con el # mas bajo y estado false se cambia a estado true
+#se le pasa un string fial(a,b,c)
+#retorna los datos del id cancelado
+class UpdateTurnoRequest(BaseModel):
+    fila: str
+    
+@app.patch("/actualizar_turno/", response_model=Turno)
+async def actualizar_turno(request: UpdateTurnoRequest):
+    fila_collection = None
+    if request.fila == "a":
         fila_collection = fila1
-    elif fila == "b":
+    elif request.fila == "b":
         fila_collection = fila2
-    elif fila == "c":
+    elif request.fila == "c":
         fila_collection = fila3
     else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
+        raise HTTPException(status_code=400, detail="Fila inválida")
 
-    max_turno = await fila_collection.find_one(sort=[("turno", 1)])
-    if max_turno:
-        return {"turno": max_turno["turno"]}
-    raise HTTPException(status_code=404, detail="No se encontró ningún turno registrado")
+    # Encontrar el turno más pequeño con estado false
+    turno_document = await fila_collection.find_one(
+        {"estado": False}, 
+        sort=[("turno", 1)]
+    )
 
-@app.get("/verificar/{id}")
-async def verificar_id(id: str):
-    user = await inscritos.find_one({"id": id})
-    if user:
-        return {"name": user["name"], "fecha": user["fecha"], "estado": user["estado"]}
-    raise HTTPException(status_code=404, detail="ID no encontrado")
+    if turno_document:
+        # Actualizar el estado a true
+        update_result = await fila_collection.update_one(
+            {"_id": turno_document["_id"]},
+            {"$set": {"estado": True}}
+        )
 
-@app.get("/nombref/{id}/{fila}")
-async def verificar_name(id: str, fila: str):
-    if fila == "a":
-        user = await fila1.find_one({"id": id})
-    elif fila == "b":
-        user = await fila2.find_one({"id": id})
-    elif fila == "c":
-        user = await fila3.find_one({"id": id})
+        if update_result.modified_count == 1:
+            return {**turno_document, "estado": True}
+    
+    raise HTTPException(status_code=400, detail="No se encontró un turno para actualizar")
+## ej json:
+"""
+{
+    "fila": "a"
+}
+"""
+
+##consulta
+#se obtienen los 5 primeros turnos
+#se le pasa fial(a,b,c)
+#retorna json con los 5 primeros turnos de la fila correspondiente
+class Unturno(BaseModel):
+    id: str
+    name: str
+    fecha: str
+    fila: str
+    turno: int
+    estado: bool
+
+class ConsultaTurnosRequest(BaseModel):
+    fila: str
+
+@app.get("/obtener_turnos/", response_model=List[Unturno])
+async def cobtener_turnos(request: ConsultaTurnosRequest):
+    fila_collection = None
+    if request.fila == "a":
+        fila_collection = fila1
+    elif request.fila == "b":
+        fila_collection = fila2
+    elif request.fila == "c":
+        fila_collection = fila3
     else:
-        raise HTTPException(status_code=404, detail="Fila no encontrada")
+        raise HTTPException(status_code=400, detail="Fila inválida")
 
-    if user:
-        return {"turno": user["turno"], "name": user["name"]}
-    raise HTTPException(status_code=404, detail="Usuario no encontrado en la fila")
+    # Encontrar los 5 turnos más pequeños con estado false
+    turnos_cursor = fila_collection.find(
+        {"estado": False},
+        sort=[("turno", 1)],
+        limit=5
+    )
 
-@app.delete("/eliminarf/{turno}/{fila}")
-async def eliminar_turno(turno: int, fila: str):
-    if fila == "a":
-        result = await fila1.delete_one({"turno": turno})
-    elif fila == "b":   
-        result = await fila2.delete_one({"turno": turno})
-    elif fila == "c":
-        result = await fila3.delete_one({"turno": turno})
+    turnos = await turnos_cursor.to_list(length=5)
+
+    if turnos:
+        return turnos
+    
+    raise HTTPException(status_code=404, detail="No se encontraron turnos con el estado false")
+## ej json:
+"""
+{
+    "fila": "a"
+}
+"""
+
+
+##consulta
+#se obtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#retorna json con los datos del turno
+class ConsultaTurnoRequest(BaseModel):
+    fila: str
+
+@app.get("/consulta_turno/", response_model=Turno)
+async def consulta_turno(request: ConsultaTurnoRequest):
+    fila_collection = None
+    if request.fila == "a":
+        fila_collection = fila1
+    elif request.fila == "b":
+        fila_collection = fila2
+    elif request.fila == "c":
+        fila_collection = fila3
     else:
-        raise HTTPException(status_code=400, detail="Fila no válida")
+        raise HTTPException(status_code=400, detail="Fila inválida")
 
-    if result.deleted_count == 1:
-        return {"message": "Turno eliminado correctamente"}
-    raise HTTPException(status_code=404, detail="Turno no encontrado en la fila")
+    # Encontrar el turno más pequeño con estado false
+    turno_document = await fila_collection.find_one(
+        {"estado": False}, 
+        sort=[("turno", 1)]
+    )
 
-inscritos_collection = database["inscritos"]  # Replace with your actual collection name
+    if turno_document:
+        return turno_document
+    
+    raise HTTPException(status_code=404, detail="No se encontró un turno con el estado false")
+## ej json:
+"""
+{
+    "fila": "a"
+}
+"""
 
-@app.get("/inscritos/")
-async def get_all_inscritos():
-    documents = inscritos_collection.find()
-    return documents
+
+##consulta
+#se obtine el id y se lo cancela
+#se le pasa un string id
+#retorna los datos del id cancelado
+class CancelarTurno(BaseModel):
+    id: str
+    
+@app.patch("/cancelar_turno/", response_model=Turno)
+async def cancelar_turno(request: CancelarTurno):
+    colecciones = [fila1, fila2, fila3]
+
+    for fila_collection in colecciones:
+        # Encontrar el ID que está en la fila con estado False
+        canselar_fila = await fila_collection.find_one(
+            {"id": request.id, "estado": False}
+        )
+        if canselar_fila:
+            # Actualizar el estado a True
+            update_result = await fila_collection.update_one(
+                {"_id": canselar_fila["_id"]},
+                {"$set": {"estado": True}}
+            )
+            if update_result.modified_count == 1:
+                return {**canselar_fila, "estado": True}
+    
+    raise HTTPException(status_code=400, detail="No se encontró un turno para cancelar")
+## ej json:
+"""
+{
+    "id": "102394"
+}
+"""
+#############################################################################
