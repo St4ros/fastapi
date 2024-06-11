@@ -1,72 +1,72 @@
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from typing import Optional
 
 app = FastAPI()
 
-# Configuración de la base de datos
-MONGO_DETAILS = "mongodb://localhost:27017"  # URL de conexión a MongoDB
+# Database configuration
+MONGO_DETAILS = "mongodb://localhost:27017"
 client = AsyncIOMotorClient(MONGO_DETAILS)
-database = client.turnos  # Nombre de la base de datos
-inscritos = database.inscritos  # Nombre de la colección
-fila1 = database.fila1  # Nombre de la colección
-fila2 = database.fila2  # Nombre de la colección
-fila3 = database.fila3  # Nombre de la colección
+database = client.turnos
+inscritos = database.inscritos
+fila1 = database.fila1
+fila2 = database.fila2
+fila3 = database.fila3
 
-# Configuración de CORS
-origins = [
-    "http://localhost:8000",
-    "http://localhost",
-]
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins for debugging
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Modelo Pydantic
+# Pydantic models
 class Turno(BaseModel):
     id: str
     name: str
     fecha: str
+    fila: str
+    estado: Optional[bool] = False
+
+class FilaTurno(BaseModel):
+    name: str
+    id: str
+    fila: str
+    estado: bool
+
+# Helper function to get the next turno number
+async def get_next_turno(fila_collection):
+    max_turno = await fila_collection.find_one(sort=[("turno", -1)])
+    return max_turno["turno"] + 1 if max_turno else 1
 
 @app.post("/registrar/")
-async def assign_turn(id: str = Form(...), name: str = Form(...), fecha: str = Form(...)):
-    # Insertar el nuevo turno en la base de datos
-    turno_data = {"id": id, "name": name, "fecha": fecha}
+async def assign_turn(turno: Turno):
+    turno_data = turno.dict()
     result = await inscritos.insert_one(turno_data)
     
     if result.inserted_id:
         return {"message": "Turno asignado correctamente"}
     raise HTTPException(status_code=400, detail="Error al asignar el turno")
-
+    
 @app.post("/setfila/")
-async def assign_turn_to_fila(name: str = Form(...), id: str = Form(...), fila: str = Form(...)):
-    # Consultar el número de turno más grande de la fila correspondiente
-    if fila == "a":
-        max_turno = await fila1.find_one(sort=[("turno", -1)])
-    elif fila == "b":
-        max_turno = await fila2.find_one(sort=[("turno", -1)])
-    elif fila == "c":
-        max_turno = await fila3.find_one(sort=[("turno", -1)])
+async def assign_turn_to_fila(fila_turno: FilaTurno):
+    if fila_turno.fila == "a":
+        fila_collection = fila1
+    elif fila_turno.fila == "b":
+        fila_collection = fila2
+    elif fila_turno.fila == "c":
+        fila_collection = fila3
     else:
         raise HTTPException(status_code=404, detail="Fila no encontrada")
 
-    next_turno = max_turno["turno"] + 1 if max_turno else 1
-
-    # Insertar el dato en la fila correspondiente
-    turno_data = {"name": name, "id": id, "turno": next_turno}
-    if fila == "a":
-        result = await fila1.insert_one(turno_data)
-    elif fila == "b":
-        result = await fila2.insert_one(turno_data)
-    elif fila == "c":
-        result = await fila3.insert_one(turno_data)
+    next_turno = await get_next_turno(fila_collection)
+    turno_data = fila_turno.dict()
+    turno_data["turno"] = next_turno
+    result = await fila_collection.insert_one(turno_data)
 
     if result.inserted_id:
         return {"message": "Turno asignado correctamente"}
@@ -75,27 +75,27 @@ async def assign_turn_to_fila(name: str = Form(...), id: str = Form(...), fila: 
 @app.get("/getturnofila/{fila}")
 async def get_current_turn(fila: str):
     if fila == "a":
-        max_turno = await fila1.find_one(sort=[("turno", 1)])
+        fila_collection = fila1
     elif fila == "b":
-        max_turno = await fila2.find_one(sort=[("turno", 1)])
+        fila_collection = fila2
     elif fila == "c":
-        max_turno = await fila3.find_one(sort=[("turno", 1)])
+        fila_collection = fila3
     else:
         raise HTTPException(status_code=404, detail="Fila no encontrada")
 
-    if max_turno and "turno" in max_turno:
-        current_turno = max_turno["turno"]
-        return {"turno": current_turno}
+    max_turno = await fila_collection.find_one(sort=[("turno", 1)])
+    if max_turno:
+        return {"turno": max_turno["turno"]}
     raise HTTPException(status_code=404, detail="No se encontró ningún turno registrado")
 
 @app.get("/verificar/{id}")
 async def verificar_id(id: str):
     user = await inscritos.find_one({"id": id})
     if user:
-        return {"name": user["name"], "fecha": user["fecha"]}
+        return {"name": user["name"], "fecha": user["fecha"], "estado": user["estado"]}
     raise HTTPException(status_code=404, detail="ID no encontrado")
 
-@app.get("/nombref/{id}{fila}")
+@app.get("/nombref/{id}/{fila}")
 async def verificar_name(id: str, fila: str):
     if fila == "a":
         user = await fila1.find_one({"id": id})
@@ -110,7 +110,7 @@ async def verificar_name(id: str, fila: str):
         return {"turno": user["turno"], "name": user["name"]}
     raise HTTPException(status_code=404, detail="Usuario no encontrado en la fila")
 
-@app.delete("/eliminarf/{turno}{fila}")
+@app.delete("/eliminarf/{turno}/{fila}")
 async def eliminar_turno(turno: int, fila: str):
     if fila == "a":
         result = await fila1.delete_one({"turno": turno})
@@ -125,21 +125,9 @@ async def eliminar_turno(turno: int, fila: str):
         return {"message": "Turno eliminado correctamente"}
     raise HTTPException(status_code=404, detail="Turno no encontrado en la fila")
 
+inscritos_collection = database["inscritos"]  # Replace with your actual collection name
 
-@app.get("/ultimascincofilas/{fila}")
-async def get_ultimas_cinco_filas(fila: str): 
-    # Obtener las últimas 5 filas de la colección especificada
-    if fila == "a":
-        ultimas_cinco_filas_cursor = fila1.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
-    elif fila == "b":
-        ultimas_cinco_filas_cursor = fila2.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
-    elif fila == "c":
-        ultimas_cinco_filas_cursor = fila3.find({}, {"_id": 0, "name": 1, "turno": 1}).sort("_id", 1).limit(5)
-    else:
-        raise HTTPException(status_code=400, detail="Fila no válida")
-    
-    # Convertir el cursor a una lista de diccionarios
-    ultimas_cinco_filas_list = await ultimas_cinco_filas_cursor.to_list(length=5)
-    
-    # Devolver los datos en formato JSON
-    return JSONResponse(content=ultimas_cinco_filas_list)
+@app.get("/inscritos/")
+async def get_all_inscritos():
+    documents = inscritos_collection.find()
+    return documents
