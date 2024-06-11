@@ -157,11 +157,16 @@ async def actualizar_turno(request: UpdateTurnoRequest):
 #se ovtirne los 5 primeros turnos
 #se le pasa fial(a,b,c)
 #retorna json con los 5 primeros turnos de la fila correspondiente
-class FilaRequest(BaseModel):
+
+class Turno(BaseModel):
+    turno: int
+    estado: bool
+
+class ConsultaTurnosRequest(BaseModel):
     fila: str
 
 @app.get("/obtener_turnos/", response_model=List[Turno])
-async def obtener_turnos(request: FilaRequest):
+async def cobtener_turnos(request: ConsultaTurnosRequest):
     fila_collection = None
     if request.fila == "a":
         fila_collection = fila1
@@ -172,13 +177,20 @@ async def obtener_turnos(request: FilaRequest):
     else:
         raise HTTPException(status_code=400, detail="Fila inválida")
 
-    # Obtener los 5 turnos más pequeños con estado false
-    turnos = await fila_collection.find(
+    # Encontrar los 5 turnos más pequeños con estado false
+    turnos_cursor = fila_collection.find(
         {"estado": False},
-        sort=[("turno", 1)]
-    ).limit(5).to_list(5)
+        sort=[("turno", 1)],
+        limit=5
+    )
 
-    return turnos
+    turnos = await turnos_cursor.to_list(length=5)
+
+    if turnos:
+        return turnos
+    
+    raise HTTPException(status_code=404, detail="No se encontraron turnos con el estado false")
+
 
 
 ##############################################################
