@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from typing import List
+from fastapi import FastAPI, HTTPException, Query
 
 app = FastAPI()
 
@@ -313,7 +314,7 @@ class Unturno(BaseModel):
 class ConsultaTurnosRequest(BaseModel):
     fila: str
 
-@app.get("/obtener_turnos/", response_model=List[Unturno])
+@app.post("/obtener_turnos/", response_model=List[Unturno])
 async def cobtener_turnos(request: ConsultaTurnosRequest):
     fila_collection = None
     if request.fila == "a":
@@ -353,7 +354,7 @@ async def cobtener_turnos(request: ConsultaTurnosRequest):
 class ConsultaTurnoRequest(BaseModel):
     fila: str
 
-@app.get("/consulta_turno/", response_model=Turno)
+@app.post("/consulta_turno/", response_model=Turno)
 async def consulta_turno(request: ConsultaTurnoRequest):
     fila_collection = None
     if request.fila == "a":
@@ -420,28 +421,26 @@ async def cancelar_turno(request: CancelarTurno):
 #se pide el id y se retorna los datos de la persona
 #se le pasa un string id
 #retorna los datos del id
-class idpersona(BaseModel):
-    id: str
 
 @app.get("/encontrar_turnopersona/", response_model=Turno)
-async def encontrar_persona(request: idpersona):
+async def encontrar_persona(id: str = Query(...)):
     encontrarid = await fila1.find_one(
-        {"id": request.id, "estado": False}
+        {"id": id, "estado": False}
     )
     if encontrarid:
-        return {**encontrarid} #si esta en una fila
+        return Turno(**encontrarid)  # Si está en una fila
     else:
         encontrarid = await fila2.find_one(
-            {"id": request.id, "estado": False}
+            {"id": id, "estado": False}
         )
         if encontrarid:
-            return {**encontrarid} #si esta en una fila
+            return Turno(**encontrarid)  # Si está en una fila
         else:
             encontrarid = await fila3.find_one(
-                {"id": request.id, "estado": False}
+                {"id": id, "estado": False}
             )
             if encontrarid:
-                return {**encontrarid} #si esta en una fila
+                return Turno(**encontrarid)  # Si está en una fila
             else:
                 raise HTTPException(status_code=404, detail="No se encontró un turno para este id")
 
