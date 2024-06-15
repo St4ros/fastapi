@@ -426,19 +426,19 @@ class idpersona(BaseModel):
 @app.get("/encontrar_turnopersona/", response_model=Turno)
 async def encontrar_persona(request: idpersona):
     encontrarid = await fila1.find_one(
-        {"id": request.id, "estado": True}
+        {"id": request.id, "estado": False}
     )
     if encontrarid:
         return {**encontrarid} #si esta en una fila
     else:
         encontrarid = await fila2.find_one(
-            {"id": request.id, "estado": True}
+            {"id": request.id, "estado": False}
         )
         if encontrarid:
             return {**encontrarid} #si esta en una fila
         else:
             encontrarid = await fila3.find_one(
-                {"id": request.id, "estado": True}
+                {"id": request.id, "estado": False}
             )
             if encontrarid:
                 return {**encontrarid} #si esta en una fila
