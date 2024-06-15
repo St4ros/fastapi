@@ -130,13 +130,13 @@ async def verificar_id_filas(id):
     if inscrito_fila:
         return True #si esta registrado
     else:
-        inscrito_fila = await fila1.find_one(
+        inscrito_fila = await fila2.find_one(
             {"id": id, "estado": False}
         )
         if inscrito_fila:
             return True #si esta registrado
         else:
-            inscrito_fila = await fila1.find_one(
+            inscrito_fila = await fila3.find_one(
                 {"id": id, "estado": False}
             )
             if inscrito_fila:
@@ -420,18 +420,32 @@ async def cancelar_turno(request: CancelarTurno):
 #se pide el id y se retorna los datos de la persona
 #se le pasa un string id
 #retorna los datos del id
-class id(BaseModel):
+class idpersona(BaseModel):
     id: str
-    
-@app.patch("/encontrar_persona/", response_model=Turno)
-async def encontrar_persona(request: id):
-    encontrarid = await inscritos.find_one(
-        {"id": request.id}
+
+@app.get("/encontrar_turnopersona/", response_model=Turno)
+async def encontrar_persona(request: idpersona):
+    encontrarid = await fila1.find_one(
+        {"id": request.id, "estado": True}
     )
     if encontrarid:
-        return {**encontrarid}
+        return {**encontrarid} #si esta en una fila
     else:
-        raise HTTPException(status_code=404, detail="No se encontró  turno en ninguna fila")
+        encontrarid = await fila2.find_one(
+            {"id": request.id, "estado": True}
+        )
+        if encontrarid:
+            return {**encontrarid} #si esta en una fila
+        else:
+            encontrarid = await fila3.find_one(
+                {"id": request.id, "estado": True}
+            )
+            if encontrarid:
+                return {**encontrarid} #si esta en una fila
+            else:
+                raise HTTPException(status_code=404, detail="No se encontró un turno para este id")
+
+        
 ## ej json:
 """
 {
