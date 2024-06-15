@@ -415,4 +415,27 @@ async def cancelar_turno(request: CancelarTurno):
     "id": "102394"
 }
 """
+
+##consulta
+#se pide el id y se retorna los datos de la persona
+#se le pasa un string id
+#retorna los datos del id
+class id(BaseModel):
+    id: str
+    
+@app.patch("/encontrar_persona/", response_model=Turno)
+async def encontrar_persona(request: id):
+    encontrarid = await inscritos.find_one(
+        {"id": request.id}
+    )
+    if encontrarid:
+        return {**encontrarid}
+    else:
+        raise HTTPException(status_code=404, detail="No se encontró  turno en ninguna fila")
+## ej json:
+"""
+{
+    "id": "102394"
+}
+"""
 #############################################################################
