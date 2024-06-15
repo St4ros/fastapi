@@ -303,25 +303,14 @@ async def actualizar_turno(request: UpdateTurnoRequest):
 #se obtienen los 5 primeros turnos
 #se le pasa fial(a,b,c)
 #retorna json con los 5 primeros turnos de la fila correspondiente
-class Unturno(BaseModel):
-    id: str
-    name: str
-    fecha: str
-    fila: str
-    turno: int
-    estado: bool
-
-class ConsultaTurnosRequest(BaseModel):
-    fila: str
-
-@app.post("/obtener_turnos/", response_model=List[Unturno])
-async def cobtener_turnos(request: ConsultaTurnosRequest):
+@app.get("/obtener_turnos/", response_model=List[Turno])
+async def cobtener_turnos(fila: str = Query(...)):
     fila_collection = None
-    if request.fila == "a":
+    if fila == "a":
         fila_collection = fila1
-    elif request.fila == "b":
+    elif fila == "b":
         fila_collection = fila2
-    elif request.fila == "c":
+    elif fila == "c":
         fila_collection = fila3
     else:
         raise HTTPException(status_code=400, detail="Fila inválida")
@@ -348,20 +337,17 @@ async def cobtener_turnos(request: ConsultaTurnosRequest):
 
 
 ##consulta
-#se obtirne los datos para asignarle turno y se le asigna el turno a la fila correspondiente
-#se le pasa id-name-fecha-fial(a,b,c)-estado(opcional)
+#se obtiene los datos para asignarle turno y se le asigna el turno a la fila correspondiente
+#se le pasa fial(a,b,c)
 #retorna json con los datos del turno
-class ConsultaTurnoRequest(BaseModel):
-    fila: str
-
-@app.post("/consulta_turno/", response_model=Turno)
-async def consulta_turno(request: ConsultaTurnoRequest):
+@app.get("/consulta_turno/", response_model=Turno)
+async def consulta_turno(fila: str = Query(...)):
     fila_collection = None
-    if request.fila == "a":
+    if fila == "a":
         fila_collection = fila1
-    elif request.fila == "b":
+    elif fila == "b":
         fila_collection = fila2
-    elif request.fila == "c":
+    elif fila == "c":
         fila_collection = fila3
     else:
         raise HTTPException(status_code=400, detail="Fila inválida")
