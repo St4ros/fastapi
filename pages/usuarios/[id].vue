@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
+import { useFetch } from '@vueuse/core';
 
 interface TurnoPersona {
     id: string;
@@ -9,28 +11,38 @@ interface TurnoPersona {
     turno: number;
 }
 
-const { id } = useRoute().params
-// const { data, error } = await useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`)
+const { id } = useRoute().params;
 
 // Primera petición GET
 const { data: data1, error: error1 } = useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`);
 
 // Segunda petición GET
 const { data: data2, error: error2 } = useFetch<TurnoPersona>(`http://localhost:8000/consulta_turno/?fila=${data1.value?.fila}`);
-
-
 </script>
 
 <template>
-    <p>Detalles para el id {{ id }}</p>
-    <!-- estos son los datos del señor que le dieron turno con el id de arriba -->
-    <h1>Bienvenido usuario {{ data1?.name }}</h1>
+    <div class="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+        <!-- Turno y Caja en Vivo -->
+        <div class="flex flex-col items-center bg-gray-800 text-gray-300 p-6 rounded shadow-lg w-full max-w-md mb-4">
+            <div class="text-4xl font-bold">Turno</div>
+            <div class="text-6xl font-extrabold">{{ data2?.turno || '---' }}</div>
+        </div>
 
-    <div v-if="data1">
-        <p>Turno: {{ data1.turno }}</p>
-        <p>Fila: {{ data1.fila }}</p>
+        <!-- Datos del usuario -->
+        <div class="flex flex-col items-center bg-gray-800 text-gray-300 p-4 rounded shadow-lg w-full max-w-md">
+            <p class="text-lg font-semibold">Detalles para el id {{ id }}</p>
+            <h1 class="text-2xl font-bold mt-2">Bienvenido usuario {{ data1?.name }}</h1>
+            <div v-if="data1" class="mt-4">
+                <p class="text-xl">Turno: {{ data1.turno }}</p>
+                <p class="text-xl">Fila: {{ data1.fila }}</p>
+            </div>
+        </div>
+
     </div>
-
-    <!-- este es el turno en vivo para la fila en la que se registra el señor de este turno -->
-    <p>{{ data2?.turno }}</p>
 </template>
+
+<style scoped>
+body {
+    font-family: 'Arial', sans-serif;
+}
+</style>
