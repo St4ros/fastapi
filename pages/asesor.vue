@@ -29,7 +29,14 @@ const bringLive = async () => {
         <div class="flex flex-col items-center bg-gray-800 text-gray-300 p-6 rounded shadow-lg w-full max-w-md mb-4">
             <form @submit.prevent="bringLive">
                 <label for="fila" class="text-justify titulo " >HOLA</label>
-                <br/>
+                <div class="mb-4">
+            <label for="row" class="block text-gray-300 mb-2">Seleccione fila</label>
+            <select v-model="fila" name="row" id="row" class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg" required>
+              <option value="a">Pagos</option>
+              <option value="b">Pqrs</option>
+              <option value="c">Preferencial</option>
+            </select>
+          </div>
                 <input v-model="fila" type="text" name="fila" id="fila" class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg" />
                 <button class="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg mt-4" type="submit">Enviar</button>
         <!-- {{ data.turno }} -->
