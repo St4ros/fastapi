@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
-import { useFetch } from '@vueuse/core';
 
 interface TurnoPersona {
     id: string;
@@ -11,13 +9,16 @@ interface TurnoPersona {
     turno: number;
 }
 
-const { id } = useRoute().params;
+const { id } = useRoute().params
+// const { data, error } = await useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`)
 
 // Primera petición GET
 const { data: data1, error: error1 } = useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`);
 
 // Segunda petición GET
 const { data: data2, error: error2 } = useFetch<TurnoPersona>(`http://localhost:8000/consulta_turno/?fila=${data1.value?.fila}`);
+
+
 </script>
 
 <template>
@@ -39,6 +40,9 @@ const { data: data2, error: error2 } = useFetch<TurnoPersona>(`http://localhost:
         </div>
 
     </div>
+            <NuxtLink to="/" class="fixed bottom-5 left-5">
+              <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
+            </NuxtLink>
 </template>
 
 <style scoped>

@@ -76,13 +76,13 @@ const submitForm = async () => {
             <img src="/pages/img/registrar.jpg" alt="Imagen" class="w-full h-auto md:h-64 lg:h-96 xl:h-128 rounded-lg">
           </div>
           <p class="mensaje text-gray-300">¡Por favor registra tus datos!</p>
-          </div>
+        </div>
           
-          </div>
+    </div>
             <NuxtLink to="/" class="fixed bottom-5 left-5">
               <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
             </NuxtLink>
-    </div>
+  </div>
 </div>
 </template>
 
