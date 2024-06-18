@@ -1,5 +1,11 @@
+<script setup lang="ts">
+  import '~/assets/estilos.css'
+  definePageMeta({
+    layout: 'custom'
+  })
+</script>
 <template>
-    <div class="flex min-h-screen items-center justify-center bg-gray-900">
+    <div class="flex min-h-screen items-center justify-center fondo">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <div class="group relative items-center justify-center overflow-hidden cursor-pointer hover:shadow-x1 hover:shadow-black/30 transition-shadow">
           <div class="h-96 w-72">

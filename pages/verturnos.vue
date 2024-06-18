@@ -17,7 +17,7 @@ const { data: filac, error: errorC } = useFetch<TurnoPersona[]>('http://localhos
 </script>
 
 <template>
-    <div class="flex flex-col items-center h-screen bg-gray-900 text-white p-12">
+    <div class="flex flex-col items-center h-screen fondo text-white p-12">
         <div class="flex justify-between w-full max-w-6xl mb-16">
             <!-- Tabla para fila A -->
             <div class="w-1/2 px-4">
@@ -107,8 +107,4 @@ const { data: filac, error: errorC } = useFetch<TurnoPersona[]>('http://localhos
             </table>
         </div>
     </div>
-
-    <NuxtLink to="/" class="fixed bottom-5 left-5">
-            <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
-    </NuxtLink>
 </template>

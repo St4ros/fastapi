@@ -1,5 +1,5 @@
 <script setup lang="ts">
-
+import '~/assets/estilos.css'
 const router = useRouter()
 
 
@@ -39,7 +39,7 @@ const submitForm = async () => {
 </script>
 
 <template>
-<div class="flex items-center justify-center min-h-screen bg-gray-900">
+<div class="flex items-center justify-center min-h-screen fondo">
   <div class="flex flex-col cuadro bg-gray-800 p-8 rounded-lg shadow-lg">
     <div class="flex items-center justify-between mb-8">
       <!-- Columna izquierda para el formulario -->
@@ -79,9 +79,6 @@ const submitForm = async () => {
         </div>
           
     </div>
-            <NuxtLink to="/" class="fixed bottom-5 left-5">
-              <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
-            </NuxtLink>
   </div>
 </div>
 </template>

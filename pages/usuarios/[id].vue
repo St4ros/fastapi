@@ -54,7 +54,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+    <div class="flex flex-col items-center justify-center min-h-screen p-4 fondo text-white">
         <!-- Turno y Caja en Vivo -->
         <div class="flex flex-col items-center bg-gray-800 text-gray-300 p-6 rounded shadow-lg w-full max-w-md mb-4">
             <div class="text-4xl font-bold">Turno</div>
@@ -71,9 +71,6 @@ onMounted(async () => {
             </div>
         </div>
     </div>
-    <NuxtLink to="/" class="fixed bottom-5 left-5">
-        <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
-    </NuxtLink>
 </template>
 
 <style scoped>

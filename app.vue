@@ -1,5 +1,7 @@
 <template>
-   <NuxtPage></NuxtPage>
+   <NuxtLayout>
+      <NuxtPage></NuxtPage>
+   </NuxtLayout>
 </template>
 
 <style scoped>
