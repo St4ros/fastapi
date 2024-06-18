@@ -25,14 +25,12 @@ const bringLive = async () => {
         });
 
         if (!updateResponse.ok) {
-            throw new Error('Ultimo turno de esta fina Eliminado');
+            throw new Error('Ultimo turno de esta fila Eliminado');
         }
-
-        const updatedTurno = await updateResponse.json();
 
         const response = await fetch(`http://localhost:8000/consulta_turno/?fila=${fila.value}`);
         if (!response.ok) {
-            throw new Error('Ultimo turno de esta fina Eliminado');
+            throw new Error('Ultimo turno de esta fila Eliminado');
         }
 
         data.value = await response.json();

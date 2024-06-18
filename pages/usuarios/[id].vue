@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 
 interface TurnoPersona {
     id: string;
@@ -9,16 +11,46 @@ interface TurnoPersona {
     turno: number;
 }
 
-const { id } = useRoute().params
-// const { data, error } = await useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`)
+const route = useRoute();
+const id = route.params.id as string;
 
-// Primera petición GET
-const { data: data1, error: error1 } = useFetch<TurnoPersona>(`http://localhost:8000/encontrar_turnopersona/?id=${id}`);
+const data1 = ref<TurnoPersona | null>(null);
+const data2 = ref<TurnoPersona | null>(null);
+const error1 = ref<Error | null>(null);
+const error2 = ref<Error | null>(null);
 
-// Segunda petición GET
-const { data: data2, error: error2 } = useFetch<TurnoPersona>(`http://localhost:8000/consulta_turno/?fila=${data1.value?.fila}`);
+const fetchTurnoPersona = async () => {
+    try {
+        const response = await fetch(`http://localhost:8000/encontrar_turnopersona/?id=${id}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        data1.value = await response.json();
+    } catch (err) {
+        error1.value = err as Error;
+        console.error(error1.value);
+    }
+};
 
+const fetchConsultaTurno = async () => {
+    if (data1.value?.fila) {
+        try {
+            const response = await fetch(`http://localhost:8000/consulta_turno/?fila=${data1.value.fila}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            data2.value = await response.json();
+        } catch (err) {
+            error2.value = err as Error;
+            console.error(error2.value);
+        }
+    }
+};
 
+onMounted(async () => {
+    await fetchTurnoPersona();
+    await fetchConsultaTurno();
+});
 </script>
 
 <template>
@@ -38,11 +70,10 @@ const { data: data2, error: error2 } = useFetch<TurnoPersona>(`http://localhost:
                 <p class="text-xl">Fila: {{ data1.fila }}</p>
             </div>
         </div>
-
     </div>
-            <NuxtLink to="/" class="fixed bottom-5 left-5">
-              <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
-            </NuxtLink>
+    <NuxtLink to="/" class="fixed bottom-5 left-5">
+        <i class="bi bi-house-fill text-white" style="font-size: 2rem;"></i>
+    </NuxtLink>
 </template>
 
 <style scoped>
